@@ -7,13 +7,20 @@ import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import BorderColorIcon from "@mui/icons-material/BorderColor";
+import Switch from "@mui/material/Switch";
 
 import { useState, useEffect } from "react";
 import { login, logout, onUserStateChange } from "../api/firebase";
+
 import User from "./User";
 
-export default function ButtonAppBar() {
+export default function Navbar() {
   const [user, setUser] = useState();
+  const [checked, setChecked] = useState(true);
+
+  const handleChange = (event) => {
+    setChecked(event.target.checked);
+  };
 
   useEffect(() => {
     onUserStateChange((user) => {
@@ -21,6 +28,8 @@ export default function ButtonAppBar() {
       setUser(user);
     });
   }, []);
+
+  const label = { inputProps: { "aria-label": "Switch demo" } };
 
   const handleLogin = () => {
     login().then((user) => setUser(user)); // if login successfully, set user's name
@@ -43,6 +52,14 @@ export default function ButtonAppBar() {
           >
             Library Reservation
           </Typography>
+          <div>
+            <Switch
+              checked={checked}
+              onChange={handleChange}
+              color="default"
+              inputProps={{ "aria-label": "controlled" }}
+            />
+          </div>
           {!user && (
             <Button
               sx={{
