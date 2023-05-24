@@ -20,6 +20,9 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
+import { login, logout, onUserStateChange } from "../api/firebase";
+import LoginRequired from "../pages/LoginRequired";
+
 // async function getColor() {
 //   const snapshot = await firestoreDb.firestore().collection("students").get();
 //   return snapshot.docs.map((doc) => doc.data);
@@ -27,17 +30,26 @@ import {
 
 export default function Buttons() {
   let seats = [];
-  let seatsLength = 10; // allocating size of seats
+  let seatsLength = 20; // allocating size of seats
 
   let tempColor = [];
 
   const [open, setOpen] = useState(false);
   const [seatNum, setSeatNum] = useState("");
   const [color, setColor] = useState([]);
-  const [selectedSeat, setSelectedSeat] = useState(null); // 선택된 좌석 정보를 추적하기 위한 상태 변수
+  const [user, setUser] = useState();
+
+  useEffect(() => {
+    onUserStateChange((user) => {
+      setUser(user);
+    });
+  }, []);
+
+  useEffect(() => {
+    getColor();
+  }, [color]);
 
   const handleOpen = (seat) => {
-    setSelectedSeat(seat); // 선택된 좌석 정보 업데이트
     setOpen(!open);
   };
 
@@ -51,7 +63,7 @@ export default function Buttons() {
     try {
       await setDoc(doc(firestoreDb, "students", e.target.innerText), {
         id: Math.floor(e.target.innerText),
-        isReserved: true,
+        isReserved: "",
         timestamp: serverTimestamp(),
       });
       setSeatNum(e.target.innerText);
@@ -62,7 +74,6 @@ export default function Buttons() {
 
   const handleReserve = async () => {
     // 예약 처리 로직 작성
-    setOpen(false); // 다이얼로그 닫기
 
     const reserveRef = doc(firestoreDb, "students", seatNum);
 
@@ -71,6 +82,7 @@ export default function Buttons() {
       timestamp: serverTimestamp(),
     });
     getColor();
+    setOpen(false); // 다이얼로그 닫기
   };
 
   const handleCancel = async () => {
@@ -92,50 +104,52 @@ export default function Buttons() {
 
       // console.log(doc.id, doc.data().isReserved);
     });
-    console.log(tempColor);
     setColor(tempColor);
   }
-
+  // getColor();
   return (
     <div>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          flexWrap: "wrap",
+      {!user && <LoginRequired />}
+      {user && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            flexWrap: "wrap",
 
-          "& > *": {
-            mt: 30,
-            my: 5,
-            mx: 4,
-            border: 2,
-          },
-        }}
-      >
-        {seats.map((seatData, index) => (
-          <ButtonGroup
-            sx={{
-              minWidth: "80px",
-              ml: 12,
-            }}
-            orientation="vertical"
-            aria-label="vertical outlined button group"
-            size="large"
-            key={index}
-          >
-            <Button
+            "& > *": {
+              mt: 30,
+              my: 5,
+              mx: 4,
+              border: 2,
+            },
+          }}
+        >
+          {seats.map((seatData, index) => (
+            <ButtonGroup
               sx={{
-                color: "black",
-                backgroundColor: color[index] === true ? "red" : "green",
+                minWidth: "80px",
+                ml: 12,
               }}
-              onClick={handleClick}
+              orientation="vertical"
+              aria-label="vertical outlined button group"
+              size="large"
+              key={index}
             >
-              {" "}
-              {index}{" "}
-            </Button>
-          </ButtonGroup>
-        ))}
-      </Box>
+              <Button
+                sx={{
+                  color: "black",
+                  backgroundColor: tempColor[index] === true ? "red" : "green",
+                }}
+                onClick={handleClick}
+              >
+                {" "}
+                {index}{" "}
+              </Button>
+            </ButtonGroup>
+          ))}
+        </Box>
+      )}
       <Dialog
         open={open}
         onClose={handleOpen}
