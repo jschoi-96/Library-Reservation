@@ -43,7 +43,7 @@ export default function Buttons() {
     onUserStateChange((user) => {
       setUser(user);
     });
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     getColor();
@@ -81,7 +81,6 @@ export default function Buttons() {
       isReserved: true,
       timestamp: serverTimestamp(),
     });
-    getColor();
     setOpen(false); // 다이얼로그 닫기
   };
 
@@ -93,7 +92,6 @@ export default function Buttons() {
       isReserved: false,
       timestamp: serverTimestamp(),
     });
-    getColor();
     setOpen(false); // 다이얼로그 닫기
   };
 
@@ -139,7 +137,7 @@ export default function Buttons() {
               <Button
                 sx={{
                   color: "black",
-                  backgroundColor: tempColor[index] === true ? "red" : "green",
+                  backgroundColor: color[index] === true ? "red" : "green",
                 }}
                 onClick={handleClick}
               >
