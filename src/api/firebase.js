@@ -8,8 +8,17 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 
-import { getDatabase, ref, child, get } from "firebase/database";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getDatabase, ref, child, get, update } from "firebase/database";
+import {
+  getFirestore,
+  getDocs,
+  collection,
+  addDoc,
+  doc,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { useEffect, useState } from "react";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -36,16 +45,25 @@ export const firestoreDb = getFirestore(app);
 export async function login() {
   // async -> 비동기함수
   // if necessary, login
+
   return signInWithPopup(auth, provider) // return promise
-    .then((result) => {
+    .then((result) => async () => {
       // This gives you a Google Access Token. You can use it to access the Google API.
       const credential = GoogleAuthProvider.credentialFromResult(result);
       const token = credential.accessToken;
       // The signed-in user info.
       const user = result.user;
-      console.log(user);
+
       // IdP data available using getAdditionalUserInfo(result)
       // ...
+      const data = {
+        name: result.user.displayName,
+        email: result.user.email,
+        uid: result.user.uid,
+      };
+
+      await setDoc(doc(firestoreDb, "users", result.user.displayName), data);
+
       return user;
     })
     .catch(console.error);

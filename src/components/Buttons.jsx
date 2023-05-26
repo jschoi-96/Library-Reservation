@@ -18,10 +18,15 @@ import {
   updateDoc,
   collection,
   serverTimestamp,
+  writeBatch,
+  onSnapshot,
 } from "firebase/firestore";
 
-import { login, logout, onUserStateChange } from "../api/firebase";
+import { getAuth } from "firebase/auth";
+
+import { onUserStateChange } from "../api/firebase";
 import LoginRequired from "../pages/LoginRequired";
+import { onAuthStateChanged } from "firebase/auth";
 
 // async function getColor() {
 //   const snapshot = await firestoreDb.firestore().collection("students").get();
@@ -29,47 +34,95 @@ import LoginRequired from "../pages/LoginRequired";
 // }
 
 export default function Buttons() {
-  let seats = [];
-  let seatsLength = 20; // allocating size of seats
-
-  let tempColor = [];
-
   const [open, setOpen] = useState(false);
   const [seatNum, setSeatNum] = useState("");
-  const [color, setColor] = useState([]);
-  const [user, setUser] = useState();
+  const [user, setUser] = useState(false);
+  const [buttons, setButtons] = useState([]);
+
+  const [over, isOver] = useState(false);
+
+  // allocating seat data once
+  // for (let i = 0; i < 10; i++) {
+  //   setDoc(doc(firestoreDb, "students", String(i)), {
+  //     id: i,
+  //     isReserved: "",
+  //     timestamp: serverTimestamp(),
+  //   });
+  // }
 
   useEffect(() => {
     onUserStateChange((user) => {
+      console.log(user);
       setUser(user);
     });
-  }, [user]);
+  }, []);
 
+  // 예약 시간이 지나면 예약이 풀리는 로직
+  const handleTime = async () => {
+    const timeRef = collection(firestoreDb, "students");
+
+    try {
+      const querySnapshot = await getDocs(timeRef);
+
+      querySnapshot.forEach((doc) => {
+        const timestamp = doc.data().timestamp;
+
+        const currentTime = new Date(); // 현재 시간
+        const serverTime = timestamp.toDate(); // 상태가 변경된 시간
+
+        const diffInMilliseconds = currentTime - serverTime;
+        if (doc.data().isReserved && diffInMilliseconds >= 3000) {
+          try {
+            updateDoc(doc.ref, {
+              isReserved: false,
+            });
+
+            console.log("Time is over, so seat status changes");
+          } catch (error) {
+            console.log(error);
+          }
+        }
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // 색깔 바꾸는 로직
+  // needs to fix in terms of effective code (even it's same state as before, still gets rendered)
   useEffect(() => {
-    getColor();
-  }, [color]);
+    const fetchData = async () => {
+      // Access the buttons collection
+      const colorRef = collection(firestoreDb, "students");
+
+      try {
+        const querySnapshot = await getDocs(colorRef);
+        const buttonData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          isReserved: doc.data().isReserved,
+        }));
+        setButtons(buttonData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+    fetchData();
+    handleTime();
+    //console.log("?");
+  }, [open]);
+
+  const getButtonColor = (isReserved) => {
+    return isReserved ? "red" : "green";
+  };
 
   const handleOpen = (seat) => {
     setOpen(!open);
   };
 
-  for (let i = 0; i < seatsLength; i++) {
-    seats.push(seats[i]);
-  }
-
   const handleClick = async (e) => {
     handleOpen(e);
 
-    try {
-      await setDoc(doc(firestoreDb, "students", e.target.innerText), {
-        id: Math.floor(e.target.innerText),
-        isReserved: "",
-        timestamp: serverTimestamp(),
-      });
-      setSeatNum(e.target.innerText);
-    } catch (error) {
-      console.log("error");
-    }
+    setSeatNum(e.target.innerText);
   };
 
   const handleReserve = async () => {
@@ -81,6 +134,7 @@ export default function Buttons() {
       isReserved: true,
       timestamp: serverTimestamp(),
     });
+
     setOpen(false); // 다이얼로그 닫기
   };
 
@@ -92,19 +146,10 @@ export default function Buttons() {
       isReserved: false,
       timestamp: serverTimestamp(),
     });
+    console.log(seatNum);
     setOpen(false); // 다이얼로그 닫기
   };
 
-  async function getColor() {
-    const query = await getDocs(collection(firestoreDb, "students"));
-    query.forEach((doc) => {
-      tempColor.push(doc.data().isReserved);
-
-      // console.log(doc.id, doc.data().isReserved);
-    });
-    setColor(tempColor);
-  }
-  // getColor();
   return (
     <div>
       {!user && <LoginRequired />}
@@ -123,7 +168,7 @@ export default function Buttons() {
             },
           }}
         >
-          {seats.map((seatData, index) => (
+          {buttons.map((button, index) => (
             <ButtonGroup
               sx={{
                 minWidth: "80px",
@@ -137,7 +182,7 @@ export default function Buttons() {
               <Button
                 sx={{
                   color: "black",
-                  backgroundColor: color[index] === true ? "red" : "green",
+                  backgroundColor: getButtonColor(button.isReserved),
                 }}
                 onClick={handleClick}
               >
