@@ -21,6 +21,7 @@ import {
   writeBatch,
   onSnapshot,
   Firestore,
+  getDoc,
 } from "firebase/firestore";
 
 import { getAuth } from "firebase/auth";
@@ -37,14 +38,17 @@ export default function Buttons() {
 
   const [over, isOver] = useState(false);
 
-  const [count, setCount] = useState(0);
+  const [weekCount, setWeekCount] = useState(0);
 
   const increaseCount = () => {
-    setCount((prev) => prev + 1);
+    setWeekCount((prev) => prev + 1);
   };
 
   const decreaseCount = () => {
-    setCount((prev) => prev - 1);
+    setWeekCount((prev) => prev - 1);
+    if (weekCount < 0) {
+      setWeekCount(0);
+    }
   };
 
   // allocating seat data once
@@ -58,13 +62,11 @@ export default function Buttons() {
 
   useEffect(() => {
     onUserStateChange((user) => {
-      console.log(user);
       setUser(user);
 
       // Reset reservation count for students on every monday
       const resetCountonMonday = async () => {
         const date = new Date().getDay();
-        console.log(user);
         if (date === 1) {
           console.log(user.displayName);
           const timeRef = doc(firestoreDb, "users", user.displayName); // 유저 필드
@@ -92,7 +94,8 @@ export default function Buttons() {
         const serverTime = timestamp.toDate(); // 상태가 변경된 시간
 
         const diffInMilliseconds = currentTime - serverTime;
-        if (doc.data().isReserved && diffInMilliseconds >= 3000) {
+        if (doc.data().isReserved && diffInMilliseconds >= 1000 * 60 * 60) {
+          // 1시간으로 set
           try {
             updateDoc(doc.ref, {
               isReserved: false,
@@ -110,7 +113,6 @@ export default function Buttons() {
   };
 
   // 색깔 바꾸는 로직
-  // needs to fix in terms of effective code (even it's same state as before, still gets rendered)
   useEffect(() => {
     const fetchData = async () => {
       // Access the buttons collection
@@ -129,12 +131,7 @@ export default function Buttons() {
     };
     fetchData();
     handleTime();
-    //console.log("?");
   }, [open]);
-
-  // const userAccess = async (user) => {
-  //   const countRef = collection(firestoreDb, "users");
-  // };
 
   const getButtonColor = (isReserved) => {
     return isReserved ? "red" : "green";
@@ -149,35 +146,38 @@ export default function Buttons() {
     setSeatNum(e.target.innerText);
   };
 
-  const handleReserve = async (e) => {
+  const handleReserve = async () => {
     // 예약 처리 로직 작성
 
     const reserveRef = doc(firestoreDb, "students", seatNum); // 좌석 필드
 
     const timeRef = doc(firestoreDb, "users", user.displayName); // 유저 필드
 
-    await updateDoc(reserveRef, {
-      isReserved: true,
-      timestamp: serverTimestamp(),
-    });
-
     const now = new Date();
 
-    const oneWeekAgo = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() - 7
-    );
+    const reservedSnapshot = await getDoc(reserveRef); // 다른 사람이 예약했는지 확인하기 위해서
+    const seatLimitSnapshot = await getDoc(timeRef);
 
-    console.log(now.getDay());
-
-    if (count >= 4) {
+    // console.log(reservedSnapshot.data().isReserved);
+    if (weekCount >= 4) {
       alert("Students can reserve only 3 times a week!");
+    } else if (seatLimitSnapshot.data().seat_reservation_status >= 1) {
+      alert("You can only reserve one seat at the time!");
+    } else if (reservedSnapshot.data().isReserved) {
+      alert("This seat is reserved! ");
     } else {
+      console.log("reserve");
       increaseCount();
+      await updateDoc(reserveRef, {
+        isReserved: true,
+        timestamp: serverTimestamp(),
+        reserved_person: user.displayName,
+      });
+
       await updateDoc(timeRef, {
         time: now,
-        count: count,
+        weekly_count: weekCount,
+        seat_reservation_status: 1,
       });
     }
 
@@ -191,17 +191,28 @@ export default function Buttons() {
 
     const timeRef = doc(firestoreDb, "users", user.displayName); // 유저 필드
 
-    await updateDoc(reserveRef, {
-      isReserved: false,
-      timestamp: serverTimestamp(),
-    });
-    // console.log(seatNum);
+    const otherReserved = await getDoc(reserveRef);
 
-    decreaseCount();
+    if (
+      otherReserved.data().reserved_person !== user.displayName &&
+      otherReserved.data().isReserved
+    ) {
+      // 다른 사람이 예약한 좌석을 취소 못하게 하는 로직
+      alert("You cannot cancel other person seat!");
+    } else {
+      await updateDoc(reserveRef, {
+        isReserved: false,
+        reserved_person: "",
+        timestamp: serverTimestamp(),
+      });
 
-    await updateDoc(timeRef, {
-      count: count,
-    });
+      decreaseCount();
+
+      await updateDoc(timeRef, {
+        weekly_count: weekCount,
+        seat_reservation_status: 0,
+      });
+    }
 
     setOpen(false); // 다이얼로그 닫기
   };
@@ -263,13 +274,14 @@ export default function Buttons() {
           <DialogContentText id="alert-dialog-description"></DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleReserve}> Yes </Button>
+          <Button onClick={handleReserve}> Reserve </Button>
           <Button
             onClick={handleCancel}
             autoFocus
           >
-            No
+            Cancel
           </Button>
+          <Button onClick={handleOpen}> Close </Button>
         </DialogActions>
       </Dialog>
     </div>
