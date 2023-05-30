@@ -62,6 +62,7 @@ export async function login() {
         uid: result.user.uid,
       };
 
+      // added data 
       await setDoc(doc(firestoreDb, "users", result.user.displayName), data);
 
       return user;

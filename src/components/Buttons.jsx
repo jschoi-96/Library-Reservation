@@ -20,6 +20,7 @@ import {
   serverTimestamp,
   writeBatch,
   onSnapshot,
+  Firestore,
 } from "firebase/firestore";
 
 import { getAuth } from "firebase/auth";
@@ -28,11 +29,6 @@ import { onUserStateChange } from "../api/firebase";
 import LoginRequired from "../pages/LoginRequired";
 import { onAuthStateChanged } from "firebase/auth";
 
-// async function getColor() {
-//   const snapshot = await firestoreDb.firestore().collection("students").get();
-//   return snapshot.docs.map((doc) => doc.data);
-// }
-
 export default function Buttons() {
   const [open, setOpen] = useState(false);
   const [seatNum, setSeatNum] = useState("");
@@ -40,6 +36,16 @@ export default function Buttons() {
   const [buttons, setButtons] = useState([]);
 
   const [over, isOver] = useState(false);
+
+  const [count, setCount] = useState(0);
+
+  const increaseCount = () => {
+    setCount((prev) => prev + 1);
+  };
+
+  const decreaseCount = () => {
+    setCount((prev) => prev - 1);
+  };
 
   // allocating seat data once
   // for (let i = 0; i < 10; i++) {
@@ -54,6 +60,21 @@ export default function Buttons() {
     onUserStateChange((user) => {
       console.log(user);
       setUser(user);
+
+      // Reset reservation count for students on every monday
+      const resetCountonMonday = async () => {
+        const date = new Date().getDay();
+        console.log(user);
+        if (date === 1) {
+          console.log(user.displayName);
+          const timeRef = doc(firestoreDb, "users", user.displayName); // 유저 필드
+
+          await updateDoc(timeRef, {
+            count: 0,
+          });
+        }
+      };
+      resetCountonMonday();
     });
   }, []);
 
@@ -111,6 +132,10 @@ export default function Buttons() {
     //console.log("?");
   }, [open]);
 
+  // const userAccess = async (user) => {
+  //   const countRef = collection(firestoreDb, "users");
+  // };
+
   const getButtonColor = (isReserved) => {
     return isReserved ? "red" : "green";
   };
@@ -121,32 +146,63 @@ export default function Buttons() {
 
   const handleClick = async (e) => {
     handleOpen(e);
-
     setSeatNum(e.target.innerText);
   };
 
-  const handleReserve = async () => {
+  const handleReserve = async (e) => {
     // 예약 처리 로직 작성
 
-    const reserveRef = doc(firestoreDb, "students", seatNum);
+    const reserveRef = doc(firestoreDb, "students", seatNum); // 좌석 필드
+
+    const timeRef = doc(firestoreDb, "users", user.displayName); // 유저 필드
 
     await updateDoc(reserveRef, {
       isReserved: true,
       timestamp: serverTimestamp(),
     });
 
+    const now = new Date();
+
+    const oneWeekAgo = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - 7
+    );
+
+    console.log(now.getDay());
+
+    if (count >= 4) {
+      alert("Students can reserve only 3 times a week!");
+    } else {
+      increaseCount();
+      await updateDoc(timeRef, {
+        time: now,
+        count: count,
+      });
+    }
+
     setOpen(false); // 다이얼로그 닫기
   };
 
   const handleCancel = async () => {
     // 예약 취소 처리 로직 작성
-    const reserveRef = doc(firestoreDb, "students", seatNum);
+
+    const reserveRef = doc(firestoreDb, "students", seatNum); // 좌석 필드
+
+    const timeRef = doc(firestoreDb, "users", user.displayName); // 유저 필드
 
     await updateDoc(reserveRef, {
       isReserved: false,
       timestamp: serverTimestamp(),
     });
-    console.log(seatNum);
+    // console.log(seatNum);
+
+    decreaseCount();
+
+    await updateDoc(timeRef, {
+      count: count,
+    });
+
     setOpen(false); // 다이얼로그 닫기
   };
 
