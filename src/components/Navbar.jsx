@@ -41,13 +41,14 @@ export default function Navbar() {
   };
 
   const location = useLocation();
+
   useEffect(() => {}, [location]);
 
   return (
     <nav>
       <Box sx={{ flexGrow: 1 }}>
         <AppBar position="static">
-          <Toolbar>
+          <Toolbar sx={{ bgcolor: "rgb(52, 59, 84)" }}>
             <BorderColorIcon sx={{ fontSize: 25, mr: 2 }} />
             <Typography
               variant="h6"
@@ -66,10 +67,6 @@ export default function Navbar() {
             </div> */}
             {!user && (
               <Button
-                sx={{
-                  border: 1,
-                  borderRadius: 20,
-                }}
                 color="inherit"
                 onClick={handleLogin}
               >
@@ -89,15 +86,7 @@ export default function Navbar() {
                 Data{" "}
               </Button>
             )} */}
-            {location.pathname === "/" && (
-              <Button
-                sx={{ color: "white" }}
-                href="/reserve"
-              >
-                {" "}
-                Reserve{" "}
-              </Button>
-            )}
+            <Button sx={{ color: "white" }}> About </Button>
             {location.pathname === "/reserve" && (
               <Button
                 sx={{ color: "white" }}
@@ -110,13 +99,6 @@ export default function Navbar() {
 
             {user && (
               <Button
-                sx={{
-                  border: 1,
-                  borderRadius: 20,
-                  "&:hover": {
-                    color: "warning.main",
-                  },
-                }}
                 color="inherit"
                 onClick={handleLogout}
               >
