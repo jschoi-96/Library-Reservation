@@ -60,9 +60,11 @@ export async function login() {
         name: result.user.displayName,
         email: result.user.email,
         uid: result.user.uid,
+        seat_reservation_status: 0,
+        daily_count: 0,
+        weekly_count: 0,
       };
-
-      // added data 
+      // added data
       await setDoc(doc(firestoreDb, "users", result.user.displayName), data);
 
       return user;
@@ -77,7 +79,7 @@ export async function logout() {
 // if user state changes, call callback function
 export function onUserStateChange(callback) {
   onAuthStateChanged(auth, async (user) => {
-    // if there is a user (loggedin)s
+    // if there is a user (loggedin)
 
     const updatedUser = user ? await adminUser(user) : null;
     callback(updatedUser);
