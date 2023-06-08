@@ -25,6 +25,7 @@ import {
   arrayUnion,
   arrayRemove,
   FieldValue,
+  where,
 } from "firebase/firestore";
 
 import { getAuth } from "firebase/auth";
@@ -43,6 +44,12 @@ export default function Buttons() {
   const [over, isOver] = useState(false);
 
   const [waitlist, setWaitlist] = useState(false);
+
+  useEffect(() => {
+    onUserStateChange((user) => {
+      setUser(user);
+    });
+  }, []);
 
   // allocating seat data once
   // for (let i = 0; i < 10; i++) {
@@ -121,7 +128,7 @@ export default function Buttons() {
 
         const timeDiff = curTime - savedTime;
 
-        if (reserved && timeDiff > 1000) {
+        if (reserved && timeDiff > 1000 * 60) {
           const docRef = doc.ref;
           updateSeatAvailability(docRef);
 
@@ -130,6 +137,26 @@ export default function Buttons() {
         }
       }
     });
+  };
+
+  // 다음 날이 되면 예약 횟수를 초기화하는 로직
+  const resetCount = async () => {
+    const curDate = new Date();
+    const nextDate = new Date(curDate);
+    nextDate.setDate(curDate.getDate() + 1);
+
+    const collectionRef = collection(firestoreDb, "users");
+    const q = query(collectionRef, where("createdAt", ">", nextDate));
+
+    const querySnapshot = await getDocs(q);
+    const batch = writeBatch(firestoreDb);
+
+    querySnapshot.forEach((doc) => {
+      const docRef = doc.ref;
+      batch.update(docRef, { daily_count: 0 });
+    });
+
+    await batch.commit();
   };
 
   // 색깔 바꾸는 로직
@@ -151,6 +178,7 @@ export default function Buttons() {
     };
     fetchData();
     handleTime();
+    resetCount();
   }, [open]);
 
   const getButtonColor = (isReserved) => {

@@ -14,6 +14,7 @@ import { login, logout, onUserStateChange } from "../api/firebase";
 
 import User from "./User";
 import { Link, useLocation } from "react-router-dom";
+import "../api/firebase.js";
 
 export default function Navbar() {
   const [user, setUser] = useState();
@@ -32,7 +33,11 @@ export default function Navbar() {
   // const label = { inputProps: { "aria-label": "Switch demo" } };
 
   const handleLogin = () => {
-    login().then((user) => setUser(user)); // if login successfully, set user's name
+    login()
+      .then((user) => {})
+      .catch((error) => {
+        console.error(error);
+      });
   };
 
   const handleLogout = () => {
