@@ -262,6 +262,8 @@ export default function Buttons() {
     ) {
       // 다른 사람이 예약한 좌석을 취소 못하게 하는 로직
       alert("You cannot cancel other person seat!");
+    } else if (!otherReserved.data().isReserved) {
+      setOpen(false);
     } else {
       await updateDoc(studentRef, {
         isReserved: false,
@@ -288,7 +290,7 @@ export default function Buttons() {
   };
 
   const handleWaitlist = async () => {
-    // seat에 지금 로그인된 유저 이름과 순서를 array 형태로 추가하기 firebase에!@!
+    // seat에 지금 로그인된 유저 이름과 순서를 array 형태로 추가하기 firebase에
 
     const stuRef = doc(firestoreDb, "students", seatNum);
     const stuRefQuery = await getDoc(stuRef);

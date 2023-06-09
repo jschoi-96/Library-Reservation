@@ -1,6 +1,7 @@
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import Buttons from "./components/Buttons";
 import Navbar from "./components/Navbar";
+import Usage from "./components/Usage";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import Root from "./pages/Root";
@@ -14,6 +15,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: "/reserve", element: <Buttons /> },
+      { path: "/usage", element: <Usage /> },
     ],
   },
 ]);

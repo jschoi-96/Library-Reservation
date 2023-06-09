@@ -91,8 +91,24 @@ export default function Navbar() {
                 Data{" "}
               </Button>
             )} */}
-            <Button sx={{ color: "white" }}> About </Button>
+            <Button
+              sx={{ color: "white" }}
+              href="usage"
+            >
+              {" "}
+              Usage{" "}
+            </Button>
             {location.pathname === "/reserve" && (
+              <Button
+                sx={{ color: "white" }}
+                href="/"
+              >
+                {" "}
+                Home{" "}
+              </Button>
+            )}
+
+            {location.pathname === "/usage" && (
               <Button
                 sx={{ color: "white" }}
                 href="/"
