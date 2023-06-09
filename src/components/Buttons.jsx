@@ -12,36 +12,26 @@ import { firestoreDb } from "../api/firebase";
 import {
   query,
   doc,
-  addDoc,
   getDocs,
-  setDoc,
   updateDoc,
   collection,
-  serverTimestamp,
   writeBatch,
-  onSnapshot,
-  Firestore,
   getDoc,
   arrayUnion,
   arrayRemove,
-  FieldValue,
   where,
+  setDoc,
+  addDoc,
 } from "firebase/firestore";
-
-import { getAuth } from "firebase/auth";
 
 import { onUserStateChange } from "../api/firebase";
 import LoginRequired from "../pages/LoginRequired";
-import { onAuthStateChanged } from "firebase/auth";
-import { increment, update } from "firebase/database";
 
 export default function Buttons() {
   const [open, setOpen] = useState(false);
   const [seatNum, setSeatNum] = useState("");
   const [user, setUser] = useState(false);
   const [buttons, setButtons] = useState([]);
-
-  const [over, isOver] = useState(false);
 
   const [waitlist, setWaitlist] = useState(false);
 
@@ -52,7 +42,7 @@ export default function Buttons() {
   }, []);
 
   // allocating seat data once
-  // for (let i = 0; i < 10; i++) {
+  // for (let i = 0; i < 16; i++) {
   //   setDoc(doc(firestoreDb, "students", String(i)), {
   //     id: i,
   //     isReserved: false,
@@ -60,6 +50,7 @@ export default function Buttons() {
   //     reservedTime: "",
   //     endTime: "",
   //     reserved_person: "",
+
   //     waitlist_info: {
   //       id: 0,
   //       waitlist: "",
@@ -128,7 +119,7 @@ export default function Buttons() {
 
         const timeDiff = curTime - savedTime;
 
-        if (reserved && timeDiff > 1000 * 60) {
+        if (reserved && timeDiff > 1000 * 60 * 60) {
           const docRef = doc.ref;
           updateSeatAvailability(docRef);
 
@@ -168,10 +159,11 @@ export default function Buttons() {
       try {
         const querySnapshot = await getDocs(colorRef);
         const buttonData = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
+          id: doc.data().id,
           isReserved: doc.data().isReserved,
         }));
         setButtons(buttonData);
+        console.log(buttonData);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -181,8 +173,8 @@ export default function Buttons() {
     resetCount();
   }, [open]);
 
-  const getButtonColor = (isReserved) => {
-    return isReserved ? "red" : "green";
+  const getButtonColor = (button) => {
+    return button.isReserved ? "red" : "green";
   };
 
   const handleOpen = () => {
@@ -192,6 +184,8 @@ export default function Buttons() {
   const handleClick = async (e) => {
     const seatNumber = e.target.innerText;
     setSeatNum(seatNumber);
+
+    console.log(seatNumber);
 
     const reservedSnapshot = await getDoc(
       doc(firestoreDb, "students", seatNumber)
@@ -326,7 +320,7 @@ export default function Buttons() {
             },
           }}
         >
-          {buttons.map((button, index) => (
+          {buttons.map((button) => (
             <ButtonGroup
               sx={{
                 minWidth: "80px",
@@ -335,17 +329,17 @@ export default function Buttons() {
               orientation="vertical"
               aria-label="vertical outlined button group"
               size="large"
-              key={index}
+              key={button.id}
             >
               <Button
                 sx={{
                   color: "black",
-                  backgroundColor: getButtonColor(button.isReserved),
+                  backgroundColor: getButtonColor(button),
                 }}
                 onClick={handleClick}
               >
                 {" "}
-                {index}{" "}
+                {button.id}{" "}
               </Button>
             </ButtonGroup>
           ))}
