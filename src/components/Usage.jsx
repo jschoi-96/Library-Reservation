@@ -46,7 +46,7 @@ export default function Usage() {
 
   return (
     <div>
-      <h2> Seat Reservation Status </h2>
+      <h2 className="text-2xl ml-16 mt-2"> Seat Reservation Status </h2>
       <div className="w-96 h-96">
         <Doughnut
           data={data}

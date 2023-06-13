@@ -77,10 +77,8 @@ export const firestoreDb = getFirestore(app);
 // }
 
 export async function login() {
-  // if necessary, login
   try {
-    await signInWithRedirect(auth, provider);
-    const result = await getRedirectResult(auth);
+    const result = await signInWithPopup(auth, provider);
     const user = result.user;
     const credential = GoogleAuthProvider.credentialFromResult(result);
     const token = credential.accessToken;
@@ -99,7 +97,6 @@ export async function login() {
     return user;
   } catch (error) {
     console.error(error);
-    throw error;
   }
 }
 

@@ -306,44 +306,47 @@ export default function Buttons() {
     <div>
       {!user && <LoginRequired />}
       {user && (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            flexWrap: "wrap",
+        <>
+          <h2 className="text-4xl font-roboto text-center mt-6"> SEAT MAPS</h2>
 
-            "& > *": {
-              mt: 30,
-              my: 5,
-              mx: 4,
-              border: 2,
-            },
-          }}
-        >
-          {buttons.map((button) => (
-            <ButtonGroup
-              sx={{
-                minWidth: "80px",
-                ml: 12,
-              }}
-              orientation="vertical"
-              aria-label="vertical outlined button group"
-              size="large"
-              key={button.id}
-            >
-              <Button
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              flexWrap: "wrap",
+              "& > *": {
+                mt: 30,
+                my: 5,
+                mx: 4,
+                border: 2,
+              },
+            }}
+          >
+            {buttons.map((button) => (
+              <ButtonGroup
                 sx={{
-                  color: "black",
-                  backgroundColor: getButtonColor(button),
+                  minWidth: "80px",
+                  ml: 12,
                 }}
-                onClick={handleClick}
+                orientation="vertical"
+                aria-label="vertical outlined button group"
+                size="large"
+                key={button.id}
               >
-                {" "}
-                {button.id}{" "}
-              </Button>
-            </ButtonGroup>
-          ))}
-        </Box>
+                <Button
+                  sx={{
+                    color: "black",
+                    backgroundColor: getButtonColor(button),
+                  }}
+                  onClick={handleClick}
+                >
+                  {" "}
+                  {button.id}{" "}
+                </Button>
+              </ButtonGroup>
+            ))}
+          </Box>
+        </>
       )}
       <Dialog
         open={open}

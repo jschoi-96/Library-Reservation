@@ -46,7 +46,7 @@ export default function Home() {
           }}
           href="/reserve"
         >
-          Reserve at here!
+          Reserve Your Seat!
         </Button>
       )}
     </div>
